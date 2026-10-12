@@ -4,10 +4,10 @@ import "testing"
 
 func TestTickIncrements(t *testing.T) {
 	c := New(0)
-	if got := c.Tick().Counter; got != 1 {
+	if got := c.TickTick().Counter; got != 1 {
 		t.Fatalf("first tick: want 1, got %d", got)
 	}
-	if got := c.Tick().Counter; got != 2 {
+	if got := c.TickTick().Counter; got != 2 {
 		t.Fatalf("second tick: want 2, got %d", got)
 	}
 }
@@ -34,5 +34,16 @@ func TestTieBreakByNodeID(t *testing.T) {
 	b := Timestamp{Counter: 5, NodeID: 2}
 	if !a.Less(b) || b.Less(a) {
 		t.Fatal("same counter: lower NodeID should be ordered first")
+	}
+}
+
+func TestLessDifferentCounters(t *testing.T) {
+	a := Timestamp{Counter: 3, NodeID: 5}
+	b := Timestamp{Counter: 5, NodeID: 0}
+	if !a.Less(b) {
+		t.Fatal("lower counter should be ordered first")
+	}
+	if b.Less(a) {
+		t.Fatal("higher counter should not be ordered first")
 	}
 }

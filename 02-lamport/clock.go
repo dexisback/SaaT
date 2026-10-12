@@ -5,13 +5,16 @@ import "sync"
 //timestamp is what a lamport clock hands out
 //compare by counter first; nodeID only when tie happens b/w two counters=
 
-type TimeStamp struct {
+type Timestamp struct {
 	Counter uint64
 	NodeID  int
 }
 
-func (a TimeStamp) Less(b TimeStamp) bool {
-	if a.Counter < b.Counter {
+// TimeStamp is retained as an alias for Timestamp for backwards compatibility.
+type TimeStamp = Timestamp
+
+func (a Timestamp) Less(b Timestamp) bool {
+	if a.Counter != b.Counter {
 		return a.Counter < b.Counter
 	}
 
@@ -30,25 +33,28 @@ func New(nodeID int) *Clock {
 }
 
 // tick stamps a local event:
-func (c *Clock) TickTick() TimeStamp {
+func (c *Clock) TickTick() Timestamp {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.counter++
-	return TimeStamp{Counter: c.counter, NodeID: c.nodeID}
+	return Timestamp{Counter: c.counter, NodeID: c.nodeID}
 }
+
+// Tick is an alias for TickTick.
+func (c *Clock) Tick() Timestamp { return c.TickTick() }
 
 //send stamps an outgoing message. the returned timestamp travels w the msg
 
-func (c *Clock) Send() TimeStamp { return c.TickTick() }
+func (c *Clock) Send() Timestamp { return c.TickTick() }
 
 //receive merges the sender's timestamp into our clock, then stamps the receive event
 
-func (c *Clock) Receive(remote TimeStamp) TimeStamp {
+func (c *Clock) Receive(remote Timestamp) Timestamp {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if remote.Counter > c.counter {
 		c.counter = remote.Counter
 	}
 	c.counter++
-	return TimeStamp{Counter: c.counter, NodeID: c.nodeID}
+	return Timestamp{Counter: c.counter, NodeID: c.nodeID}
 }
