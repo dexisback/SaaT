@@ -33,16 +33,17 @@ type Stamped struct {
 	Physical time.Time
 }
 
+// builds trueTime for each event, using the node's local sequence number and network latency
 func AssignTrueTime(events []sim.Event) map[EventKey]time.Time {
+
+	//grouping and sorting events by node
 	perNode := map[int][]sim.Event{}
 	for _, e := range events {
 		perNode[e.NodeID] = append(perNode[e.NodeID], e)
-
 	}
-
+	//after creating pernode , we run sort.Slice on each node's event slice.  this guarantees that for any given node, its actions are evaluated strictly in order (Sequence 0, then Sequence 1, then Sequence 2)...
 	for _, evs := range perNode {
 		sort.Slice(evs, func(i int, j int) bool { return evs[i].Sequence < evs[j].Sequence })
-
 	}
 
 	times := map[EventKey]time.Time{}
@@ -89,6 +90,7 @@ func AssignTrueTime(events []sim.Event) map[EventKey]time.Time {
 //stamp runs every event through its node's skewed clock
 //offsets : per-node skew. steps: an NTP styled jump applied just before a specific event  happens
 
+// stamp is the core function that translates ideal timeline into individual physical clocks
 func Stamp(events []sim.Event, offsets map[int]time.Duration, steps map[EventKey]time.Duration) []Stamped {
 	trueTimes := AssignTrueTime(events)
 
@@ -123,7 +125,8 @@ func Stamp(events []sim.Event, offsets map[int]time.Duration, steps map[EventKey
 	return out
 }
 
-func ms(t time.Time) int64 { return t.Sub(base).Milliseconds() }
+// converts time.Time into an integer
+func ms(inputTime time.Time) int64 { return inputTime.Sub(base).Milliseconds() }
 
 // Report prints the stamps, then the three ways physical time lies.
 func Report(stamped []Stamped) {
@@ -135,7 +138,7 @@ func Report(stamped []Stamped) {
 
 	// 1. Effect stamped before its cause.
 	sends := map[int]Stamped{}
-	recvs := map[int]Stamped{}
+	receives := map[int]Stamped{}
 	var ids []int
 	for _, s := range stamped {
 		switch s.Event.Type {
@@ -143,14 +146,14 @@ func Report(stamped []Stamped) {
 			sends[s.Event.MessageID] = s
 			ids = append(ids, s.Event.MessageID)
 		case sim.Receive:
-			recvs[s.Event.MessageID] = s
+			receives[s.Event.MessageID] = s
 		}
 	}
 	sort.Ints(ids)
 	fmt.Println("-- causality check --")
 	violations := 0
 	for _, id := range ids {
-		snd, rcv := sends[id], recvs[id]
+		snd, rcv := sends[id], receives[id]
 		if rcv.Physical.Before(snd.Physical) {
 			violations++
 			fmt.Printf("VIOLATION msg %d: received (node %d) at %dms, but sent (node %d) at %dms\n",
