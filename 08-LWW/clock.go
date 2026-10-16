@@ -185,3 +185,7 @@ func main() {
 	fmt.Println("LWW is right for: caches, metrics, analytics, sessions.")
 	fmt.Println("Version vectors are right for: user data, financial records, anything that matters.")
 }
+
+
+
+//LWW deliberately throws info away. that's the whole point 
