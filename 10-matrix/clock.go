@@ -64,14 +64,6 @@ func NewClock(nodeID int, numberOfNodes int) *Clock {
 
 func (clock *Clock) LocalEvent() Matrix {
 	clock.matrix[clock.nodeID][clock.nodeID]++
-
-	// tell every row what our new counter is
-	ourNewCounter := clock.matrix[clock.nodeID][clock.nodeID]
-	for rowIndex := range clock.matrix {
-		if clock.matrix[rowIndex][clock.nodeID] < ourNewCounter {
-			clock.matrix[rowIndex][clock.nodeID] = ourNewCounter
-		}
-	}
 	return copyMatrix(clock.matrix)
 }
 
@@ -80,12 +72,21 @@ func (clock *Clock) SendMessage() Matrix {
 	return clock.LocalEvent()
 }
 
-//receiveMessage: merge incoming matrix with ours row by row (slot-wise max), then do a local event to record the receive itself
-
 func (clock *Clock) ReceiveMessage(incomingMatrix Matrix) Matrix {
+	// 1. Update our knowledge of what other nodes have seen
 	for rowIndex := range clock.matrix {
 		clock.matrix[rowIndex] = rowWiseMax(clock.matrix[rowIndex], incomingMatrix[rowIndex])
 	}
+
+	// 2. Our own row (our vector clock) must reflect all events observed by the sender
+	for _, row := range incomingMatrix {
+		for colIndex := range clock.matrix[clock.nodeID] {
+			if row[colIndex] > clock.matrix[clock.nodeID][colIndex] {
+				clock.matrix[clock.nodeID][colIndex] = row[colIndex]
+			}
+		}
+	}
+
 	return clock.LocalEvent()
 }
 
