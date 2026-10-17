@@ -16,40 +16,43 @@ type Message struct {
 //network will delivery message with artificial random delay, simulating real world jitter
 
 type Network struct {
-	mu      sync.Mutex //protects rng
+	mu      sync.Mutex // protects rng
 	inboxes map[int]chan Message
-	rng     *rand.Rand //rng = random number generator
+	rng     *rand.Rand // rng = random number generator
+	wg      sync.WaitGroup
 }
 
 func NewNetwork(nodeIDs []int, seed int64) *Network {
 	n := &Network{
 		inboxes: make(map[int]chan Message),
-		rng:     rand.New(rand.NewSource(seed)), //simulation produces the exact same sequence everytime you run ts
-
+		rng:     rand.New(rand.NewSource(seed)), // simulation produces the exact same sequence everytime you run ts
 	}
 	for _, id := range nodeIDs {
-		n.inboxes[id] = make(chan Message, 10) //buffered channel cuh a `send` goroutine should NOT block forever if the receiving node is slow to read
-		//loops through every ID in nodeIDs and creates a buffered channel (capacity of 10) for that node's inbox
-
+		n.inboxes[id] = make(chan Message, 50) // buffered channel
 	}
 	return n
 }
 
-//ssend pushes a message onto the msg pipeline with random delay (5-50ms).
-
+// Send pushes a message onto the msg pipeline with random delay (5-50ms).
 func (n *Network) Send(from, to, MessageID int) {
 	n.mu.Lock()
-	delay := time.Duration(5+n.rng.Intn(45)) * time.Millisecond //simulating jitter
+	delay := time.Duration(5+n.rng.Intn(45)) * time.Millisecond // simulating jitter
 	n.mu.Unlock()
 
-	//why a separate goroutine?  spawns a goroutine for the transmissoin. ts ensures the sending node does NOT get blocked while waiting for the network delay to finish
+	n.wg.Add(1)
 	go func() {
+		defer n.wg.Done()
 		time.Sleep(delay)
 		n.inboxes[to] <- Message{FromKaun: from, ToKaun: to, MessageID: MessageID}
 	}()
 }
 
-// inbox returns the channel a node should listen on:
+// Wait blocks until all in-flight message delivery delays have elapsed and delivered to inboxes
+func (n *Network) Wait() {
+	n.wg.Wait()
+}
+
+// Inbox returns the channel a node should listen on:
 func (n *Network) Inbox(nodeID int) chan Message {
 	return n.inboxes[nodeID]
 }

@@ -71,7 +71,65 @@ func (c *Causality) Concurrent(a Event, b Event) bool {
 	return KeyOf(a) != KeyOf(b) && !c.Before(a, b) && !c.Before(b, a)
 }
 
-//{Node: 0, Seq: 1}: {
-//        {Node: 1, Seq: 0}: true,
-//        {Node: 1, Seq: 1}: true,
-//    },
+// Relation represents the true causal relationship between two events
+type Relation int
+
+const (
+	Same Relation = iota
+	HappensBefore
+	HappensAfter
+	Concurrent
+)
+
+func (r Relation) String() string {
+	switch r {
+	case HappensBefore:
+		return "before"
+	case HappensAfter:
+		return "after"
+	case Concurrent:
+		return "concurrent"
+	default:
+		return "same"
+	}
+}
+
+// Relate determines the ground truth causal relationship from event a to event b.
+func (c *Causality) Relate(a, b Event) Relation {
+	if a.NodeID == b.NodeID && a.Sequence == b.Sequence {
+		return Same
+	}
+	if c.Before(a, b) {
+		return HappensBefore
+	}
+	if c.Before(b, a) {
+		return HappensAfter
+	}
+	return Concurrent
+}
+
+// ConcurrentPairs returns all unordered pairs {a, b} of distinct events that are concurrent.
+func (c *Causality) ConcurrentPairs(events []Event) [][2]Event {
+	var pairs [][2]Event
+	for i := 0; i < len(events); i++ {
+		for j := i + 1; j < len(events); j++ {
+			if c.Concurrent(events[i], events[j]) {
+				pairs = append(pairs, [2]Event{events[i], events[j]})
+			}
+		}
+	}
+	return pairs
+}
+
+// CausalPairs returns all directed pairs (a, b) where a happened before b.
+func (c *Causality) CausalPairs(events []Event) [][2]Event {
+	var pairs [][2]Event
+	for i := 0; i < len(events); i++ {
+		for j := 0; j < len(events); j++ {
+			if i != j && c.Before(events[i], events[j]) {
+				pairs = append(pairs, [2]Event{events[i], events[j]})
+			}
+		}
+	}
+	return pairs
+}

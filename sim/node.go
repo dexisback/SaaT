@@ -15,9 +15,6 @@ type EventLog struct {
 func (l *EventLog) Record(e Event) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	out := make([]Event, len(l.events)) //buffer of length of events, e)
-	copy(out, l.events)
-	l.events = out
 	l.events = append(l.events, e)
 }
 
