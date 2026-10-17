@@ -101,7 +101,7 @@ Each clock is an importable Go package with invariant tests and a runnable `demo
 ## run any clock
 
 ```bash
-# Core self-contained simulations
+# 1. Static Manual Walkthroughs (The 3-node stories)
 go run ./01-physical/demo
 go run ./02-lamport/demo
 go run ./03-vector/demo
@@ -114,10 +114,23 @@ go run ./09-interval-tree-clocks/demo
 go run ./10-matrix/demo
 go run ./11-hybrid-vector/demo
 
-# Run all property and invariant tests (with race detection)
+# 2. Dynamic /sim Scenario Executions & Causality Audits
+go run ./01-physical/sim
+go run ./02-lamport/sim
+go run ./03-vector/sim
+go run ./04-HLC/sim
+go run ./05-truetime/sim
+go run ./06-version-vectors/sim
+go run ./07-dotted-version-vector/sim
+go run ./08-LWW/sim
+go run ./09-interval-tree-clocks/sim
+go run ./10-matrix/sim
+go run ./11-hybrid-vector/sim
+
+# 3. Invariant & Property Test Suites (with Race Detection)
 go test -race ./...
 
-# Realtime network implementations
+# 4. Realtime Network Demos
 go run ./01-physical/realNTP
 go run ./05-truetime/realtime
 ```
