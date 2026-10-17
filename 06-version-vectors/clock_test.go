@@ -1,4 +1,4 @@
-package main
+package versionvector
 
 import (
 	"strings"
@@ -25,19 +25,19 @@ func TestVersionVectorCompare(t *testing.T) {
 }
 
 func TestVersionVectorSyncAndConflict(t *testing.T) {
-	rep0 := newReplica(0, 2)
-	rep1 := newReplica(1, 2)
+	rep0 := NewReplica(0, 2)
+	rep1 := NewReplica(1, 2)
 
 	// Step 1: rep0 writes
 	rep0.Write("first_version") // [1, 0]
 
 	// rep1 syncs from rep0 -> should accept
-	res := rep1.Sync(rep0.value, rep0.versionVector)
+	res := rep1.Sync(rep0.Value, rep0.VersionVector)
 	if !strings.Contains(res, "took other replica's value") {
 		t.Fatalf("expected rep1 to accept newer value, got: %s", res)
 	}
-	if rep1.value != "first_version" {
-		t.Fatalf("expected value 'first_version', got %s", rep1.value)
+	if rep1.Value != "first_version" {
+		t.Fatalf("expected value 'first_version', got %s", rep1.Value)
 	}
 
 	// Step 2: Concurrent writes on rep0 and rep1
@@ -45,13 +45,13 @@ func TestVersionVectorSyncAndConflict(t *testing.T) {
 	rep1.Write("branch_B") // [1, 1]
 
 	// rep1 attempts to sync branch_A from rep0 -> must detect conflict!
-	resConflict := rep1.Sync(rep0.value, rep0.versionVector)
+	resConflict := rep1.Sync(rep0.Value, rep0.VersionVector)
 	if !strings.Contains(resConflict, "CONFLICT") {
 		t.Fatalf("expected conflict detection on divergent writes, got: %s", resConflict)
 	}
 
 	// Step 3: Conflict resolution with Merge
-	mergedVector := Merge(rep0.versionVector, rep1.versionVector)
+	mergedVector := Merge(rep0.VersionVector, rep1.VersionVector)
 	if mergedVector[0] != 2 || mergedVector[1] != 1 {
 		t.Fatalf("expected merged vector [2, 1], got %v", mergedVector)
 	}

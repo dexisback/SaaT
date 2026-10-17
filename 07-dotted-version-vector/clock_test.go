@@ -1,4 +1,4 @@
-package main
+package dvv
 
 import (
 	"strings"
@@ -26,11 +26,11 @@ func TestDVVHasSeen(t *testing.T) {
 }
 
 func TestDVVDetectsConcurrentWriteWithStaleContext(t *testing.T) {
-	replica := newReplica(0, 2)
+	replica := NewReplica(0, 2)
 
 	// Base write
-	replica.Write("v1", newVersionVector(2))
-	dotV1 := replica.current.Dot
+	replica.Write("v1", NewVersionVector(2))
+	dotV1 := replica.Current.Dot
 
 	// Two clients read v1 simultaneously
 	_, ctxA := replica.Read()
@@ -38,9 +38,8 @@ func TestDVVDetectsConcurrentWriteWithStaleContext(t *testing.T) {
 
 	// Client A writes v2
 	replica.Write("v2", ctxA)
-	dotV2 := replica.current.Dot
+	dotV2 := replica.Current.Dot
 
-	// Invariant: dotV2 must be newer than dotV1
 	if dotV2.Counter <= dotV1.Counter {
 		t.Fatalf("expected dotV2 counter > dotV1 counter")
 	}
@@ -48,18 +47,17 @@ func TestDVVDetectsConcurrentWriteWithStaleContext(t *testing.T) {
 	// Client B writes v3 using stale ctxB (which only saw v1)
 	replica.Write("v3", ctxB)
 
-	// Critical DVV invariant: Client B's known context did NOT see dotV2!
-	// This proves to the system that v3 did NOT observe v2, exposing concurrency.
-	if replica.current.KnownVersions.HasSeen(dotV2) {
+	// Invariant: Client B's known context did NOT see dotV2!
+	if replica.Current.KnownVersions.HasSeen(dotV2) {
 		t.Fatalf("expected Client B's context NOT to have seen dotV2")
 	}
 }
 
 func TestDVVIdempotentSync(t *testing.T) {
-	repA := newReplica(0, 2)
-	repB := newReplica(1, 2)
+	repA := NewReplica(0, 2)
+	repB := NewReplica(1, 2)
 
-	repA.Write("item", newVersionVector(2))
+	repA.Write("item", NewVersionVector(2))
 
 	// First sync should succeed
 	msg1 := repB.Sync(repA)

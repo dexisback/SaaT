@@ -42,36 +42,58 @@ hybrid vector       → combines vector clock structure with HLC timestamps per 
 
 ## structure
 
-Each folder has one `clock.go` (`package main`, runnable directly). Intentionally kept a single-file structure. Folders that benefit from real network behaviour have a `realtime/` or `realNTP/` subfolder that uses actual HTTP and, where relevant, live NTP queries.
+Each clock is an importable Go package with invariant tests and a runnable `demo/` story. Folders that benefit from real network behaviour have a `realtime/` or `realNTP/` subfolder that uses actual HTTP and, where relevant, live NTP queries.
 
 ```
-/sim                     shared event harness (used by 01-physical)
+/sim                     shared simulation, causality DAG, and verification engine
 /01-physical
-    clock.go
+    clock.go             wall clock model with skew and step adjustments
+    clock_test.go        unit tests for drift and non-monotonicity
+    demo/                runnable demonstration
     realNTP/             queries real NTP servers via github.com/beevik/ntp
 /02-lamport
-    clock.go
+    clock.go             lamport logical clock package
+    clock_test.go        unit tests for causality and monotonicity
+    demo/                runnable demonstration
     realtime/            three HTTP nodes you drive from the keyboard
 /03-vector
-    clock.go
+    clock.go             vector clock package
+    clock_test.go        unit tests for concurrency detection
+    demo/                runnable demonstration
 /04-HLC
-    clock.go
+    clock.go             hybrid logical clock package
+    clock_test.go        unit tests for physical advance and skew resilience
+    demo/                runnable demonstration
     realtime/            real time.Now() with configurable per-node skew
 /05-truetime
-    clock.go
+    clock.go             truetime uncertainty & commit-wait package
+    clock_test.go        unit tests for interval bounds and commit-wait guarantee
+    demo/                runnable demonstration
     realtime/            uncertainty window from real NTP round-trip times
 /06-version-vectors
-    clock.go
+    clock.go             version vector package
+    clock_test.go        unit tests for replica conflict detection & merge
+    demo/                runnable demonstration
 /07-dotted-version-vector
-    clock.go
+    clock.go             dotted version vector package
+    clock_test.go        unit tests for HasSeen and stale context detection
+    demo/                runnable demonstration
 /08-LWW
-    clock.go
+    clock.go             wall-clock and Lamport last-write-wins registers
+    clock_test.go        unit tests for register overwrites and tie-breaking
+    demo/                runnable demonstration
 /09-interval-tree-clocks
-    clock.go
+    clock.go             interval tree clock package (dynamic membership)
+    clock_test.go        unit tests for identity conservation and event growth
+    demo/                runnable demonstration
 /10-matrix
-    clock.go
+    clock.go             matrix clock package (distributed GC tracking)
+    clock_test.go        unit tests for knowledge propagation and CanDelete
+    demo/                runnable demonstration
 /11-hybrid-vector
-    clock.go
+    clock.go             hybrid vector clock package
+    clock_test.go        unit tests for concurrency detection with real time
+    demo/                runnable demonstration
 ```
 
 ---
@@ -80,10 +102,20 @@ Each folder has one `clock.go` (`package main`, runnable directly). Intentionall
 
 ```bash
 # Core self-contained simulations
-go run ./03-vector
-go run ./04-HLC
-go run ./05-truetime
-go run ./09-interval-tree-clocks
+go run ./01-physical/demo
+go run ./02-lamport/demo
+go run ./03-vector/demo
+go run ./04-HLC/demo
+go run ./05-truetime/demo
+go run ./06-version-vectors/demo
+go run ./07-dotted-version-vector/demo
+go run ./08-LWW/demo
+go run ./09-interval-tree-clocks/demo
+go run ./10-matrix/demo
+go run ./11-hybrid-vector/demo
+
+# Run all property and invariant tests (with race detection)
+go test -race ./...
 
 # Realtime network implementations
 go run ./01-physical/realNTP
