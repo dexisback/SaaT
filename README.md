@@ -137,4 +137,4 @@ go run ./05-truetime/realtime
 
 ---
 
-Built w love by dextertwts / amaanworks / amaan <3
+Built w love by [dextertwts](https://twitter.com/dextertwts) / [amaanworks](https://amaanworks.me) / [dexisback](https://github.com/dexisback) <3
