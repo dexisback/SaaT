@@ -1,8 +1,11 @@
 # SaaT
 
+> 30 minute walkthrough and explainer on distributed clocks and how we implemented them from scratch in this repository -- https://amaanworks.hashnode.dev/distributed-clocks-from-scratch 
+
 **SaaT** (*Saat*, Turkish for *"Time"*) is an exhaustive set of distributed systems clocks and causal ordering algorithms implemented from scratch in Go.
 
 Implementations of every major distributed systems clock, each in a single self-contained Go file. No frameworks, no shared state between folders. Run any clock with `go run ./<folder>`.
+
 
 ---
 
